@@ -5,14 +5,18 @@
 { config, pkgs, ... }:
 
 let
-  # fluent-theme = import ./packages/fluent-theme.nix { inherit (pkgs) stdenv fetchFromGitHub gtk-engine-murrine lib; };
-  # orchis-theme = import ./packages/orchis-theme.nix { inherit (pkgs) stdenv fetchFromGitHub gtk-engine-murrine lib; };
-  # vscode-custom = import ./applications/vscode-custom.nix { inherit pkgs; };
+  # vscode-base = import ./vscode-base.nix { inherit pkgs; };
 in
 {
+  # If home-manager channel is not available, add it with the following lines
+  # sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-23.05.tar.gz home-manager
+  # sudo nix-channel --update
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      
+      # Importing home-manager
+      <home-manager/nixos>
     ];
 
   # Bootloader.
@@ -89,6 +93,8 @@ in
 
   # Enable drawing tablets
   hardware.opentabletdriver.enable = true;
+  
+  # Enable solaar and logitech stuff
   hardware.logitech.wireless.enable = true;
   hardware.logitech.wireless.enableGraphical = true; # for solaar to be included
 
@@ -116,26 +122,23 @@ in
   users.users.jrenewhite = {
     isNormalUser = true;
     description = "José René White Enciso";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      godot_4
-      krita
-      xournalpp
-      obs-studio
-      skypeforlinux
-      onedrive
-      # email
-      thunderbird
-    ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
   };
-
+  
   users.users.rwhite = {
     isNormalUser = true;
     description = "René White @ Apex";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     uid = null;  # Let NixOS automatically assign a UID
     home = "/home/rwhite";  # Set the home directory path
     createHome = true;  # Create the home directory
+  };
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.jrenewhite = import ./jrenewhite-home.nix;
+    users.rwhite = import ./rwhite-home.nix;
   };
 
 
@@ -145,39 +148,22 @@ in
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    # home-manager
-    # vscode-custom
     #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     neofetch
     gnome.gnome-tweaks
     libreoffice
+    joplin-desktop
+    dynamic-wallpaper
     # browsers
     firefox
     microsoft-edge
-    #Themes
-    fluent-gtk-theme
-    orchis-theme
-    flat-remix-gtk
-    graphite-gtk-theme
-    juno-theme
-    # Icon themes
-    colloid-icon-theme
-    vimix-icon-theme
-    flat-remix-icon-theme
-    fluent-icon-theme
-    iconpack-obsidian
-    numix-icon-theme
-    numix-icon-theme-circle
-    numix-icon-theme-square
-    papirus-icon-theme
-    # Cursors
-    nordzy-cursor-theme
     #development
     gitFull
     # vscode.fhs
     azuredatastudio
     #coding stuff
+    vscode.fhs
     docker
     powershell
     #SDKs
@@ -215,6 +201,8 @@ in
     hitori # sudoku game
     atomix # puzzle game
   ]);
+  
+  virtualisation.docker.enable = true;
   
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
